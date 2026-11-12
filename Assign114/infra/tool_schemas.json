@@ -1,0 +1,24 @@
+[
+  {
+    "name": "lookup_customer",
+    "description": "Look up a customer record (name, email, tier, open tickets) by customer ID such as C-1001.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {"customer_id": {"type": "string", "description": "Customer ID, e.g. C-1001"}},
+      "required": ["customer_id"]
+    }
+  },
+  {
+    "name": "send_notification",
+    "description": "Send an email-style notification to a customer.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "recipient_email": {"type": "string"},
+        "subject": {"type": "string"},
+        "message": {"type": "string"}
+      },
+      "required": ["recipient_email", "subject", "message"]
+    }
+  }
+]

@@ -1,0 +1,52 @@
+Create a clean, professional architecture flowchart diagram (left-to-right) for the project described below. Use labeled boxes and arrows, group related boxes in labeled containers, use different colors per group, and add a short legend. Output it as a Mermaid diagram I can paste into mermaid.live, and also describe how it looks.
+
+PROJECT: Multi-agent customer-support system on AWS (Amazon Bedrock + Bedrock AgentCore). Region: us-east-1.
+
+EXAMPLE REQUEST THE DIAGRAM SHOULD TRACE:
+"Look up customer C-1001 and email them that their ticket is resolved."
+A follow-up in the same session: "Notify that customer again" (answered using memory).
+
+COMPONENTS (group names in bold):
+
+**Client**
+- User / client script (scripts/06_invoke.py) calls InvokeAgentRuntime with a session_id and actor_id.
+
+**AgentCore Runtime (container)**
+- Orchestrator agent: receives the request, loads memory, delegates customer questions.
+- Support specialist agent: the only agent that has tools; calls the tools.
+
+**Amazon Bedrock**
+- Foundation model: Claude Sonnet 4.5 (us.anthropic.claude-sonnet-4-5-20250929-v1:0). Both agents call it for reasoning (Converse API).
+
+**Identity**
+- Amazon Cognito user pool with an M2M (client-credentials) app client. The specialist gets a JWT access token with scope agentcore-demo/invoke.
+
+**AgentCore Gateway (MCP endpoint, JWT-protected)**
+- Validates the Cognito JWT, then routes tool calls to two targets:
+  - Lambda: lookup_customer (reads customer record: name, email, tier, open tickets)
+  - Lambda: send_notification (sends/logs the notification)
+
+**AgentCore Memory**
+- Short-term: conversation turns per actor_id + session_id.
+- Long-term: semantic facts per actor.
+
+**Observability**
+- OpenTelemetry (ADOT) traces and JSON logs from the runtime -> CloudWatch GenAI Observability / X-Ray. One trace covers runtime -> model calls -> gateway tool calls.
+
+FLOW (numbered arrows):
+1. Client -> AgentCore Runtime (Orchestrator): invoke with prompt, session_id, actor_id.
+2. Orchestrator <-> AgentCore Memory: recall earlier turns and facts.
+3. Orchestrator -> Support specialist: delegate the customer request.
+4. Both agents <-> Bedrock Claude: reasoning / tool selection.
+5. Specialist -> Cognito: request token (client credentials).
+6. Specialist -> AgentCore Gateway (MCP + Bearer JWT): call tools.
+7. Gateway -> lookup_customer Lambda, then -> send_notification Lambda; results return to the specialist.
+8. Specialist -> Orchestrator -> Client: final answer.
+9. Orchestrator -> AgentCore Memory: store the new turn.
+10. Runtime -> CloudWatch / X-Ray: traces and logs (dotted line).
+
+STYLE NOTES:
+- Show Bedrock, Cognito, Gateway, Memory, Lambdas and CloudWatch as AWS-style service boxes.
+- Solid arrows for the request flow, dotted arrow for observability, double-headed arrows for memory.
+- Keep text short; number the arrows 1-10 as above.
+- Add a small note box: "Mock mode (scripts/run_local.py) runs the same flow offline without AWS."

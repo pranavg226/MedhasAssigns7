@@ -1,0 +1,10 @@
+boto3>=1.40.0
+bedrock-agentcore>=0.1.5
+bedrock-agentcore-starter-toolkit>=0.1.14
+strands-agents>=1.0.0
+strands-agents-tools>=0.2.0
+mcp>=1.10.0
+requests>=2.32.0
+aws-opentelemetry-distro>=0.10.0
+python-dotenv>=1.0.0
+pytest>=8.0.0
